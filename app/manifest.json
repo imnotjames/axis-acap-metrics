@@ -27,7 +27,7 @@
                 },
                 {
                     "name": "Job",
-                    "default": "",
+                    "default": "axis-acap",
                     "type": "string"
                 },
                 {
