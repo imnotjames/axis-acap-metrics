@@ -22,17 +22,6 @@ QueueMetric() {
   METRIC_META=$4
   METRIC_HELP=$5
 
-  FULL_META=""
-  
-  if [ -n "$METRICS_EXTRAMETA" ]; then
-    FULL_META="${FULL_META},${METRICS_EXTRAMETA}"
-  fi
-
-  if [ -n "$METRIC_META" ]; then
-    FULL_META="${FULL_META},${METRIC_META}"
-  fi
-  
-
   if [ -n "${METRIC_TYPE}" ]; then
     echo "# TYPE ${METRIC_NAME} ${METRIC_TYPE}" >> "$BUFFER_FILE"
   fi
@@ -41,7 +30,7 @@ QueueMetric() {
     echo "# HELP ${METRIC_NAME} ${METRIC_HELP//$'\n'/ }" >> "$BUFFER_FILE"
   fi
 
-  echo "${METRIC_NAME}{${FULL_META}} ${METRIC_DATA}" >> "$BUFFER_FILE"
+  echo "${METRIC_NAME}{${METRIC_META}} ${METRIC_DATA}" >> "$BUFFER_FILE"
 }
 
 FlushMetrics() {

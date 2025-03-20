@@ -39,11 +39,6 @@
                     "name": "Instance",
                     "default": "",
                     "type": "string"
-                },
-                {
-                    "name": "ExtraMeta",
-                    "default": "",
-                    "type": "string"
                 }
             ]
         }
