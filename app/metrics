@@ -22,7 +22,7 @@ QueueMetric() {
   METRIC_META=$4
   METRIC_HELP=$5
 
-  FULL_META="host:\"${METRIC_HOST}\""
+  FULL_META=""
   
   if [ -n "$METRICS_EXTRAMETA" ]; then
     FULL_META="${FULL_META},${METRICS_EXTRAMETA}"
@@ -79,7 +79,7 @@ FlushMetrics() {
     --no-progress-meter \
     --max-time 60 \
     --data-binary @- \
-    "https://${METRICS_SITE}/metrics/job/${METRICS_JOB}/instance/${METRICS_INSTANCE}"
+    "https://${METRICS_SITE}/metrics/job/${METRICS_JOB}/host/${METRICS_INSTANCE}"
 
   # Clear the queue
   rm -f "$BUFFER_FILE"
