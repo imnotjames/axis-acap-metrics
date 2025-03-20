@@ -52,9 +52,8 @@ FlushMetrics() {
     return 0
   fi
 
-  # eval $(GetParameters "/etc/sysconfig/storage.conf")
-  # eval $(GetParameters "conf/$APP_NAME.conf")
-
+  eval $(GetParameters "/etc/sysconfig/storage.conf")
+  eval $(GetParameters "conf/$APP_NAME.conf")
 
   if [ -z "$METRICS_SITE" ]; then
     echo "No metrics site defined"
