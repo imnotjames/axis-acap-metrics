@@ -85,6 +85,8 @@ FlushMetrics() {
 
   # Clear the queue
   rm -f "$BUFFER_FILE"
+
+  echo "Flush complete"
 }
 
 
