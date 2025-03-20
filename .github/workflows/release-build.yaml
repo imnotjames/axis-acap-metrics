@@ -1,0 +1,48 @@
+name: Release build
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch:
+          - armv7hf
+          - aarch64
+    container: axisecp/acap-native-sdk:12.1.0-${{ matrix.arch }}-ubuntu24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ACAP
+        working-directory: app/
+        run: |
+          . /opt/axis/acapsdk/environment-setup*
+          acap-build .
+      - name: Persist Artifacts
+        uses: actions/upload-artifact@v4.5.0
+        with:
+          name: build-${{ matrix.arch }}
+          path: "app/*.eap"
+  publish:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get token from Github App
+        uses: actions/create-github-app-token@v1
+        id: generate-token
+        with:
+          app-id: ${{ vars.RELEASE_PLEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - name: Grab artifacts
+        uses: actions/download-artifact@v4
+      - name: Upload files to release
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          gh release upload ${GITHUB_REF#refs/*/} build-*/*.eap
