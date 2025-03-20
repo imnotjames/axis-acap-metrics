@@ -90,7 +90,7 @@ FlushMetrics() {
 }
 
 
-PushCPUMetrics() {
+QueueCPUMetrics() {
   CPU_STATS=$(cat /proc/stat | grep 'cpu  ' | sed 's/^cpu  //')
 
   CPU_USER=$(echo "$CPU_STATS" | cut -d' ' -f 1)
@@ -116,8 +116,7 @@ PushCPUMetrics() {
 }
 
 
-
-PushDiskMetrics() {
+QueueDiskMetrics() {
   TARGET_DISK=$1
   DISK_META="device=\"${TARGET_DISK}\""
   
@@ -148,12 +147,12 @@ PushDiskMetrics() {
 }
 
 
-PushDiagnosticMetrics() {
-  PushCPUMetrics
+QueueDiagnosticMetrics() {
+  QueueCPUMetrics
   
   DISKS=$(df | grep '\(^/dev/\|^vcrfs\)' | cut -d' ' -f1 | sort | uniq)
   for TARGET_DISK in $DISKS; do
-    PushDiskMetrics "$TARGET_DISK"
+    QueueDiskMetrics "$TARGET_DISK"
   done
 
   UPTIME_SECONDS=$(cat /proc/uptime | cut -d' ' -f 1)
@@ -164,7 +163,7 @@ PushDiagnosticMetrics() {
 FlushMetrics
 
 while true; do
-  PushDiagnosticMetrics
+  QueueDiagnosticMetrics
   FlushMetrics
 
   sleep ${METRICS_INTERVAL:-60}
