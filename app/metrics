@@ -147,9 +147,38 @@ QueueDiskMetrics() {
 }
 
 
+QueueMemoryMetrics() {
+  MEMORY_STATS=$(free | grep '^Mem:' | sed 's/\s\+/ /g')
+
+  MEMORY_TOTAL=$(echo $MEMORY_STATS | cut -d' ' -f 2)
+  MEMORY_USED=$(echo $MEMORY_STATS | cut -d' ' -f 3)
+  MEMORY_FREE=$(echo $MEMORY_STATS | cut -d' ' -f 4)
+  MEMORY_CACHED=$(echo $MEMORY_STATS | cut -d' ' -f 6)
+  MEMORY_AVAILABLE=$(echo $MEMORY_STATS | cut -d' ' -f 7)
+
+  QueueMetric "mem_total" "gauge" "$MEMORY_TOTAL"
+  QueueMetric "mem_used" "gauge" "$MEMORY_USED"
+  QueueMetric "mem_free" "gauge" "$MEMORY_FREE"
+  QueueMetric "mem_cached" "gauge" "$MEMORY_CACHED"
+  QueueMetric "mem_usable" "gauge" "$MEMORY_AVAILABLE"
+
+  SWAP_STATS=$(free | grep '^Swap:' | sed 's/\s\+/ /g')
+  SWAP_STATS=${SWAP_STATS:-swap 0 0 0}
+
+  SWAP_TOTAL=$(echo $SWAP_STATS | cut -d' ' -f 2)
+  SWAP_USED=$(echo $SWAP_STATS | cut -d' ' -f 3)
+  SWAP_FREE=$(echo $SWAP_STATS | cut -d' ' -f 4)
+
+  QueueMetric "swap_total" "gauge" "$SWAP_TOTAL"
+  QueueMetric "swap_used" "gauge" "$SWAP_USED"
+  QueueMetric "swap_free" "gauge" "$SWAP_FREE"
+}
+
+
 QueueDiagnosticMetrics() {
   QueueCPUMetrics
-  
+  QueueMemoryMetrics
+
   DISKS=$(df | grep '\(^/dev/\|^vcrfs\)' | cut -d' ' -f1 | sort | uniq)
   for TARGET_DISK in $DISKS; do
     QueueDiskMetrics "$TARGET_DISK"
