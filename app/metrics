@@ -115,7 +115,7 @@ PushCPUMetrics() {
 
 PushDiskMetrics() {
   TARGET_DISK=$1
-  DISK_META="device:\"${TARGET_DISK}\""
+  DISK_META="device=\"${TARGET_DISK}\""
   
   DISK_STATS=$(df | grep "^${TARGET_DISK}" | head -n1)
 
