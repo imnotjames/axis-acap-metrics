@@ -31,11 +31,6 @@
                     "type": "string"
                 },
                 {
-                    "name": "Job",
-                    "default": "",
-                    "type": "string"
-                },
-                {
                     "name": "Instance",
                     "default": "",
                     "type": "string"
