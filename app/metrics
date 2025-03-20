@@ -165,5 +165,5 @@ while true; do
   PushDiagnosticMetrics
   FlushMetrics
 
-  sleep 600
+  sleep ${METRICS_INTERVAL:-60}
 done

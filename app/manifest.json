@@ -44,6 +44,11 @@
                     "name": "Password",
                     "default": "",
                     "type": "secret"
+                },
+                {
+                    "name": "Interval",
+                    "default": "60",
+                    "type": "string"
                 }
             ]
         }
