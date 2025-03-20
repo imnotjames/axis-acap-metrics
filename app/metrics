@@ -70,7 +70,7 @@ FlushMetrics() {
       --no-progress-meter \
       --max-time 60 \
       --data-binary @- \
-      "https://${METRICS_SITE}/metrics/job/${METRICS_JOB}/host/${METRICS_INSTANCE}"
+      "https://${METRICS_SITE}/metrics/job/${METRICS_JOB}/instance/${METRICS_INSTANCE}"
   else
     cat "$BUFFER_FILE" | curl -i -f \
       -X PUT \
@@ -78,7 +78,7 @@ FlushMetrics() {
       --no-progress-meter \
       --max-time 60 \
       --data-binary @- \
-      "https://${METRICS_SITE}/metrics/job/${METRICS_JOB}/host/${METRICS_INSTANCE}"
+      "https://${METRICS_SITE}/metrics/job/${METRICS_JOB}/instance/${METRICS_INSTANCE}"
   fi
 
   # Clear the queue
