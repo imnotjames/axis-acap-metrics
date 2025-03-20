@@ -90,25 +90,25 @@ PushCPUMetrics() {
   CPU_STATS=$(cat /proc/stat | grep 'cpu  ' | sed 's/^cpu  //')
 
   CPU_USER=$(echo "$CPU_STATS" | cut -d' ' -f 1)
-  QueueMetric "system.cpu.user" "gauge" "${CPU_USER}"
+  QueueMetric "cpu_user" "gauge" "${CPU_USER}"
 
   CPU_SYSTEM=$(echo "$CPU_STATS" | cut -d' ' -f 3)
-  QueueMetric "system.cpu.systen" "gauge" "${CPU_SYSTEM}"
+  QueueMetric "cpu_system" "gauge" "${CPU_SYSTEM}"
 
   CPU_IDLE=$(echo "$CPU_STATS" | cut -d' ' -f 4)
-  QueueMetric "system.cpu.idle" "gauge" "${CPU_IDLE}"
+  QueueMetric "cpu_idle" "gauge" "${CPU_IDLE}"
 
   CPU_IOWAIT=$(echo "$CPU_STATS" | cut -d' ' -f 5)
-  QueueMetric "system.cpu.iowait" "gauge" "${CPU_IOWAIT}"
+  QueueMetric "cpu_iowait" "gauge" "${CPU_IOWAIT}"
 
   CPU_IRQ=$(echo "$CPU_STATS" | cut -d' ' -f 6)
-  QueueMetric "system.cpu.interrupt" "gauge" "${CPU_IRQ}"
+  QueueMetric "cpu_interrupt" "gauge" "${CPU_IRQ}"
 
   CPU_STEAL=$(echo "$CPU_STATS" | cut -d' ' -f 8)
-  QueueMetric "system.cpu.stolen" "gauge" "${CPU_STEAL}"
+  QueueMetric "cpu_stolen" "gauge" "${CPU_STEAL}"
 
   CPU_GUEST=$(echo "$CPU_STATS" | cut -d' ' -f 9)
-  QueueMetric "system.cpu.guest" "gauge" "${CPU_GUEST}"
+  QueueMetric "cpu_guest" "gauge" "${CPU_GUEST}"
 }
 
 
@@ -136,11 +136,11 @@ PushDiskMetrics() {
     DISK_IN_USE="1.00"
   fi
 
-  QueueMetric "system.disk.free" "gauge" "$DISK_FREE" "$DISK_META"
-  QueueMetric "system.disk.in_use" "gauge" "$DISK_IN_USE" "$DISK_META"
-  QueueMetric "system.disk.total" "gauge" "$DISK_TOTAL" "$DISK_META"
-  QueueMetric "system.disk.used" "gauge" "$DISK_USED" "$DISK_META"
-  QueueMetric "system.disk.utilized" "gauge" "$DISK_UTILIZED" "$DISK_META"
+  QueueMetric "disk_free" "gauge" "$DISK_FREE" "$DISK_META"
+  QueueMetric "disk_in_use" "gauge" "$DISK_IN_USE" "$DISK_META"
+  QueueMetric "disk_total" "gauge" "$DISK_TOTAL" "$DISK_META"
+  QueueMetric "disk_used" "gauge" "$DISK_USED" "$DISK_META"
+  QueueMetric "disk_utilized" "gauge" "$DISK_UTILIZED" "$DISK_META"
 }
 
 
@@ -153,7 +153,7 @@ PushDiagnosticMetrics() {
   done
 
   UPTIME_SECONDS=$(cat /proc/uptime | cut -d' ' -f 1)
-  QueueMetric "system.uptime" "gauge" "${UPTIME_SECONDS}"
+  QueueMetric "uptime" "gauge" "${UPTIME_SECONDS}"
 }
 
 # Do an initial flush of any old metrics in case of some kind of a failure
