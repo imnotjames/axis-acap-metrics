@@ -153,12 +153,14 @@ QueueMemoryMetrics() {
   MEMORY_TOTAL=$(echo $MEMORY_STATS | cut -d' ' -f 2)
   MEMORY_USED=$(echo $MEMORY_STATS | cut -d' ' -f 3)
   MEMORY_FREE=$(echo $MEMORY_STATS | cut -d' ' -f 4)
+  MEMORY_SHARED=$(echo $MEMORY_STATS | cut -d' ' -f 5)
   MEMORY_CACHED=$(echo $MEMORY_STATS | cut -d' ' -f 6)
   MEMORY_AVAILABLE=$(echo $MEMORY_STATS | cut -d' ' -f 7)
 
   QueueMetric "mem_total" "gauge" "$MEMORY_TOTAL"
   QueueMetric "mem_used" "gauge" "$MEMORY_USED"
   QueueMetric "mem_free" "gauge" "$MEMORY_FREE"
+  QueueMetric "mem_shared" "gauge" "$MEMORY_SHARED"
   QueueMetric "mem_cached" "gauge" "$MEMORY_CACHED"
   QueueMetric "mem_usable" "gauge" "$MEMORY_AVAILABLE"
 
