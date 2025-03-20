@@ -1,0 +1,167 @@
+#!/bin/sh
+
+APP_NAME=$(basename $0)
+BUFFER_FILE=$(mktemp /tmp/${APP_NAME}.XXXXXX)
+
+GetParameters() {
+  cat $1 | grep '=' | \
+  while read -r PARAM_LINE; do
+    KEY=$(echo "${APP_NAME}_${PARAM_LINE}" | sed -r 's/^([^=]*)=(.*)/\1/' | tr '[:lower:]' '[:upper:]')
+    VALUE=$(echo "${APP_NAME}_${PARAM_LINE}" | sed -r 's/^([^=]*)=(.*)/\2/')
+
+    echo "export $KEY=$VALUE"
+  done
+}
+
+QueueMetric() {
+  METRIC_HOST=$(hostname)
+
+  METRIC_NAME=$1
+  METRIC_TYPE=$2
+  METRIC_DATA=$3
+  METRIC_META=$4
+  METRIC_HELP=$5
+
+  FULL_META="host:\"${METRIC_HOST}\""
+  
+  if [ -n "$METRICS_EXTRAMETA" ]; then
+    FULL_META="${FULL_META},${METRICS_EXTRAMETA}"
+  fi
+
+  if [ -n "$METRIC_META" ]; then
+    FULL_META="${FULL_META},${METRIC_META}"
+  fi
+  
+
+  if [ -n "${METRIC_TYPE}" ]; then
+    echo "# TYPE ${METRIC_NAME} ${METRIC_TYPE}" >> "$BUFFER_FILE"
+  fi
+
+  if [ -n "${METRIC_HELP}" ]; then
+    echo "# HELP ${METRIC_NAME} ${METRIC_HELP//$'\n'/ }" >> "$BUFFER_FILE"
+  fi
+
+  echo "${METRIC_NAME}{${FULL_META}} ${METRIC_DATA}" >> "$BUFFER_FILE"
+}
+
+FlushMetrics() {
+  if [ ! -s "$BUFFER_FILE" ]; then
+    # If the metrics queue file is empty or doesn't exist
+    # then we don't need to flush
+    rm -f "$BUFFER_FILE"
+    return 0
+  fi
+
+  # eval $(GetParameters "/etc/sysconfig/storage.conf")
+  # eval $(GetParameters "conf/$APP_NAME.conf")
+
+
+  if [ -z "$METRICS_SITE" ]; then
+    echo "No metrics site defined"
+    return 0
+  fi
+
+  if [ -z "$METRICS_JOB" ]; then
+    echo "No metrics job defined"
+    return 0
+  fi
+
+  if [ -z "$METRICS_INSTANCE" ]; then
+    METRICS_INSTANCE=$(hostname)
+  fi
+
+  echo "Flushing metrics"
+
+  cat "$BUFFER_FILE"
+
+  cat "$BUFFER_FILE" | curl -i -f -X POST \
+    --output /dev/null \
+    --no-progress-meter \
+    --max-time 60 \
+    --data-binary @- \
+    "https://${METRICS_SITE}/metrics/job/${METRICS_JOB}/instance/${METRICS_INSTANCE}"
+
+  # Clear the queue
+  rm -f "$BUFFER_FILE"
+}
+
+
+PushCPUMetrics() {
+  CPU_STATS=$(cat /proc/stat | grep 'cpu  ' | sed 's/^cpu  //')
+
+  CPU_USER=$(echo "$CPU_STATS" | cut -d' ' -f 1)
+  QueueMetric "system.cpu.user" "gauge" "${CPU_USER}"
+
+  CPU_SYSTEM=$(echo "$CPU_STATS" | cut -d' ' -f 3)
+  QueueMetric "system.cpu.systen" "gauge" "${CPU_SYSTEM}"
+
+  CPU_IDLE=$(echo "$CPU_STATS" | cut -d' ' -f 4)
+  QueueMetric "system.cpu.idle" "gauge" "${CPU_IDLE}"
+
+  CPU_IOWAIT=$(echo "$CPU_STATS" | cut -d' ' -f 5)
+  QueueMetric "system.cpu.iowait" "gauge" "${CPU_IOWAIT}"
+
+  CPU_IRQ=$(echo "$CPU_STATS" | cut -d' ' -f 6)
+  QueueMetric "system.cpu.interrupt" "gauge" "${CPU_IRQ}"
+
+  CPU_STEAL=$(echo "$CPU_STATS" | cut -d' ' -f 8)
+  QueueMetric "system.cpu.stolen" "gauge" "${CPU_STEAL}"
+
+  CPU_GUEST=$(echo "$CPU_STATS" | cut -d' ' -f 9)
+  QueueMetric "system.cpu.guest" "gauge" "${CPU_GUEST}"
+}
+
+
+
+PushDiskMetrics() {
+  TARGET_DISK=$1
+  DISK_META="device:\"${TARGET_DISK}\""
+  
+  DISK_STATS=$(df | grep "^${TARGET_DISK}" | head -n1)
+
+  DISK_TOTAL_KB=$(echo $DISK_STATS | cut -d' ' -f 2)
+  DISK_TOTAL=$(( $DISK_TOTAL_KB * 1024 ))
+  DISK_USED_KB=$(echo $DISK_STATS | cut -d' ' -f 3)
+  DISK_USED=$(($DISK_USED_KB * 1024))
+  DISK_FREE_KB=$(echo $DISK_STATS | cut -d' ' -f 4)
+  DISK_FREE=$(($DISK_FREE_KB * 1024))
+
+  DISK_UTILIZED=$(( 100 * $DISK_USED / $DISK_TOTAL ))
+
+  if [ $DISK_UTILIZED -lt 10 ]; then
+    DISK_IN_USE="0.0${DISK_UTILIZED}"
+  elif [ $DISK_UTILIZED -lt 100 ]; then
+    DISK_IN_USE="0.${DISK_UTILIZED}"
+  else
+    DISK_IN_USE="1.00"
+  fi
+
+  QueueMetric "system.disk.free" "gauge" "$DISK_FREE" "$DISK_META"
+  QueueMetric "system.disk.in_use" "gauge" "$DISK_IN_USE" "$DISK_META"
+  QueueMetric "system.disk.total" "gauge" "$DISK_TOTAL" "$DISK_META"
+  QueueMetric "system.disk.used" "gauge" "$DISK_USED" "$DISK_META"
+  QueueMetric "system.disk.utilized" "gauge" "$DISK_UTILIZED" "$DISK_META"
+}
+
+
+PushDiagnosticMetrics() {
+  PushCPUMetrics
+  
+  DISKS=$(df | grep '\(^/dev/\|^vcrfs\)' | cut -d' ' -f1 | sort | uniq)
+  for TARGET_DISK in $DISKS; do
+    PushDiskMetrics "$TARGET_DISK"
+  done
+
+  UPTIME_SECONDS=$(cat /proc/uptime | cut -d' ' -f 1)
+  QueueMetric "system.uptime" "gauge" "${UPTIME_SECONDS}"
+}
+
+# Do an initial flush of any old metrics in case of some kind of a failure
+FlushMetrics
+
+while true; do
+  PushDiagnosticMetrics
+  FlushMetrics
+
+  sleep 600
+done

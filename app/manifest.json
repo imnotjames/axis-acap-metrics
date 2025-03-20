@@ -1,0 +1,51 @@
+{
+    "schemaVersion": "1.7.2",
+    "resources": {
+        "linux": {
+            "user": {
+                "groups": [
+                    "storage"
+                ]
+            }
+        }
+    },
+    "acapPackageConf": {
+        "setup": {
+            "friendlyName": "Push diagnostics to a Prometheus pushgateway",
+            "appName": "metrics",
+            "vendor": "James Ward",
+            "embeddedSdkVersion": "3.0",
+            "runMode": "respawn",
+            "version": "0.0.1"
+        },
+        "configuration": {
+            "paramConfig": [
+                {
+                    "name": "Site",
+                    "default": "",
+                    "type": "string"
+                },
+                {
+                    "name": "Job",
+                    "default": "",
+                    "type": "string"
+                },
+                {
+                    "name": "Job",
+                    "default": "",
+                    "type": "string"
+                },
+                {
+                    "name": "Instance",
+                    "default": "",
+                    "type": "string"
+                },
+                {
+                    "name": "ExtraMeta",
+                    "default": "",
+                    "type": "string"
+                }
+            ]
+        }
+    }
+}
