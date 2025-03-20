@@ -1,4 +1,4 @@
-# An ACAP application pushing metrics for 
+# An ACAP application pushing metrics
 
 NOTES:
 No underscores can exist in the app name or there's bugs on the UI for
