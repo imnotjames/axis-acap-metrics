@@ -73,7 +73,8 @@ FlushMetrics() {
 
   cat "$BUFFER_FILE"
 
-  cat "$BUFFER_FILE" | curl -i -f -X POST \
+  cat "$BUFFER_FILE" | curl -i -f \
+    -X PUT \
     --output /dev/null \
     --no-progress-meter \
     --max-time 60 \
