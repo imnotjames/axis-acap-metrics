@@ -60,10 +60,12 @@ FlushMetrics() {
 
   echo "Flushing metrics"
 
-  cat "$BUFFER_FILE"
+  BUFFER=$(cat "$BUFFER_FILE" | sort --version-sort -r | uniq)
+
+  echo "$BUFFER"
 
   if [ -n "${METRICS_USERNAME}${METRICS_PASSWORD}" ]; then
-    cat "$BUFFER_FILE" | curl -i -f \
+    echo "$BUFFER" | curl -i -f \
       -X PUT \
       --user "${METRICS_USERNAME}:${METRICS_PASSWORD}" \
       --output /dev/null \
@@ -72,7 +74,7 @@ FlushMetrics() {
       --data-binary @- \
       "https://${METRICS_SITE}/metrics/job/${METRICS_JOB}/instance/${METRICS_INSTANCE}"
   else
-    cat "$BUFFER_FILE" | curl -i -f \
+    echo "$BUFFER" | curl -i -f \
       -X PUT \
       --output /dev/null \
       --no-progress-meter \
