@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/imnotjames/axis-acap-metrics/compare/v0.1.0...v0.2.0) (2025-03-20)
+
+
+### Features
+
+* add memory metrics ([ad44f75](https://github.com/imnotjames/axis-acap-metrics/commit/ad44f75ff239066e0307b247d311667cd7eb5060))
+* add shared memory metrics ([d2e5439](https://github.com/imnotjames/axis-acap-metrics/commit/d2e54398311f00fd44d5f2c280a0e2a6d95dfbeb))
+
 ## [0.1.0](https://github.com/imnotjames/axis-acap-metrics/compare/v0.0.2...v0.1.0) (2025-03-20)
 
 
