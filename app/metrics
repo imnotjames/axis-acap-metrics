@@ -62,13 +62,24 @@ FlushMetrics() {
 
   cat "$BUFFER_FILE"
 
-  cat "$BUFFER_FILE" | curl -i -f \
-    -X PUT \
-    --output /dev/null \
-    --no-progress-meter \
-    --max-time 60 \
-    --data-binary @- \
-    "https://${METRICS_SITE}/metrics/job/${METRICS_JOB}/host/${METRICS_INSTANCE}"
+  if [ -n "${METRICS_USERNAME}${METRICS_PASSWORD}" ]; then
+    cat "$BUFFER_FILE" | curl -i -f \
+      -X PUT \
+      --user "${METRICS_USERNAME}:${METRICS_PASSWORD}" \
+      --output /dev/null \
+      --no-progress-meter \
+      --max-time 60 \
+      --data-binary @- \
+      "https://${METRICS_SITE}/metrics/job/${METRICS_JOB}/host/${METRICS_INSTANCE}"
+  else
+    cat "$BUFFER_FILE" | curl -i -f \
+      -X PUT \
+      --output /dev/null \
+      --no-progress-meter \
+      --max-time 60 \
+      --data-binary @- \
+      "https://${METRICS_SITE}/metrics/job/${METRICS_JOB}/host/${METRICS_INSTANCE}"
+  fi
 
   # Clear the queue
   rm -f "$BUFFER_FILE"
