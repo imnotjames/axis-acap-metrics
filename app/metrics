@@ -61,8 +61,6 @@ FlushMetrics() {
     METRICS_INSTANCE=$(hostname)
   fi
 
-  echo "Flushing metrics"
-
   # Sort is unreliable here - if we use `sort` we end up with
   # inconsistent handling of symbols.  Instead, we snag all the
   # comments then all the other values
@@ -71,11 +69,9 @@ FlushMetrics() {
 
   BUFFER=$(echo -e "${BUFFER_COMMENTS}\n\n${BUFFER_METRICS}")
 
-  echo "$BUFFER"
-
   if [ -n "${METRICS_USERNAME}${METRICS_PASSWORD}" ]; then
     echo "$BUFFER" | curl -i -f \
-      -X PUT \
+      --request PUT \
       --user "${METRICS_USERNAME}:${METRICS_PASSWORD}" \
       --output /dev/null \
       --no-progress-meter \
@@ -84,7 +80,7 @@ FlushMetrics() {
       "https://${METRICS_SITE}/metrics/job/${METRICS_JOB}/instance/${METRICS_INSTANCE}"
   else
     echo "$BUFFER" | curl -i -f \
-      -X PUT \
+      --request PUT \
       --output /dev/null \
       --no-progress-meter \
       --max-time 60 \
@@ -94,8 +90,6 @@ FlushMetrics() {
 
   # Clear the queue
   rm -f "$BUFFER_FILE"
-
-  echo "Flush complete"
 }
 
 
@@ -209,7 +203,9 @@ FlushMetrics
 
 while true; do
   QueueDiagnosticMetrics
+
   FlushMetrics
+  echo "Metrics flushed"
 
   sleep ${METRICS_INTERVAL:-60}
 done
