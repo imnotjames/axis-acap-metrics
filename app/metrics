@@ -60,7 +60,13 @@ FlushMetrics() {
 
   echo "Flushing metrics"
 
-  BUFFER=$(cat "$BUFFER_FILE" | sort --version-sort -r | uniq)
+  # Sort is unreliable here - if we use `sort` we end up with
+  # inconsistent handling of symbols.  Instead, we snag all the
+  # comments then all the other values
+  BUFFER_COMMENTS=$(grep "^#" "$BUFFER_FILE" | sort | uniq)
+  BUFFER_METRICS=$(grep -v "^#" "$BUFFER_FILE" | sort | uniq)
+
+  BUFFER="${BUFFER_COMMENTS}\n\n${BUFFER_METRICS}"
 
   echo "$BUFFER"
 
