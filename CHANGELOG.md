@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/imnotjames/axis-acap-metrics/compare/v0.2.0...v0.2.1) (2025-03-21)
+
+
+### Bug Fixes
+
+* don't rely on sort for symbols ([8ad7da2](https://github.com/imnotjames/axis-acap-metrics/commit/8ad7da236df361e2bb6e9991b93e29d9e57970a2))
+
 ## [0.2.0](https://github.com/imnotjames/axis-acap-metrics/compare/v0.1.0...v0.2.0) (2025-03-20)
 
 
