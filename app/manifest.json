@@ -11,7 +11,7 @@
     },
     "acapPackageConf": {
         "setup": {
-            "friendlyName": "Push diagnostics to a Prometheus pushgateway",
+            "friendlyName": "Prometheus Metrics",
             "appName": "metrics",
             "vendor": "James Ward",
             "embeddedSdkVersion": "3.0",
