@@ -65,9 +65,8 @@ FlushMetrics() {
   # comments then all the other values
   BUFFER_COMMENTS=$(grep "^#" "$BUFFER_FILE" | sort | uniq)
   BUFFER_METRICS=$(grep -v "^#" "$BUFFER_FILE" | sort | uniq)
-  BUFFER_SEPARATOR=$(echo -e "\r\n\r\n\r\n")
 
-  BUFFER="${BUFFER_COMMENTS}${BUFFER_SEPARATOR}${BUFFER_METRICS}"
+  BUFFER=$(echo -e "${BUFFER_COMMENTS}\n\n${BUFFER_METRICS}")
 
   echo "$BUFFER"
 
