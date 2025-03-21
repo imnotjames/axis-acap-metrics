@@ -153,31 +153,47 @@ QueueDiskMetrics() {
 }
 
 
+QueueMemoryMetric() {
+  MEMORY_KEY=$1
+
+  MEMORY_STAT=$(
+    cat /proc/meminfo \
+      | grep "^${MEMORY_KEY}:" \
+      | sed 's/\s\+/ /g'
+  )
+
+  MEMORY_KILOBYTES=$(echo $MEMORY_STAT | cut -d' ' -f 2)
+  MEMORY_UNIT=$(echo $MEMORY_STAT | cut -d' ' -f 3)
+
+  case "$MEMORY_UNIT" in
+    kB)
+      MEMORY_BYTES=$(( $MEMORY_KILOBYTES * 1024 ))
+      ;;
+
+    *)
+      MEMORY_BYTES=${MEMORY_KILOBYTES}
+  esac
+
+  METRIC_NAME="node_memory_${MEMORY_KEY}_bytes"
+
+  QueueMetric "$METRIC_NAME" "gauge" "$MEMORY_BYTES"
+}
+
+
 QueueMemoryMetrics() {
-  MEMORY_STATS=$(free | grep '^Mem:' | sed 's/\s\+/ /g')
-
-  MEMORY_TOTAL=$(echo $MEMORY_STATS | cut -d' ' -f 2)
-  MEMORY_USED=$(echo $MEMORY_STATS | cut -d' ' -f 3)
-  MEMORY_FREE=$(echo $MEMORY_STATS | cut -d' ' -f 4)
-  MEMORY_SHARED=$(echo $MEMORY_STATS | cut -d' ' -f 5)
-  MEMORY_CACHED=$(echo $MEMORY_STATS | cut -d' ' -f 6)
-  MEMORY_AVAILABLE=$(echo $MEMORY_STATS | cut -d' ' -f 7)
-
-  QueueMetric "node_memory_MemTotal_bytes" "gauge" "$MEMORY_TOTAL"
-  QueueMetric "node_memory_MemFree_bytes" "gauge" "$MEMORY_FREE"
-  QueueMetric "node_memory_Shmem_bytes" "gauge" "$MEMORY_SHARED"
-  QueueMetric "node_memory_Cached_bytes" "gauge" "$MEMORY_CACHED"
-
-  SWAP_STATS=$(free | grep '^Swap:' | sed 's/\s\+/ /g')
-  SWAP_STATS=${SWAP_STATS:-swap 0 0 0}
-
-  SWAP_TOTAL=$(echo $SWAP_STATS | cut -d' ' -f 2)
-  SWAP_USED=$(echo $SWAP_STATS | cut -d' ' -f 3)
-  SWAP_FREE=$(echo $SWAP_STATS | cut -d' ' -f 4)
-
-  QueueMetric "node_memory_SwapTotal_bytes" "gauge" "$SWAP_TOTAL"
-  QueueMetric "node_memory_SwapCached_bytes" "gauge" "$SWAP_USED"
-  QueueMetric "node_memory_SwapFree_bytes" "gauge" "$SWAP_FREE"
+  QueueMemoryMetric "MemTotal"
+  QueueMemoryMetric "MemFree"
+  QueueMemoryMetric "MemAvailable"
+  QueueMemoryMetric "Bounce"
+  QueueMemoryMetric "Buffers"
+  QueueMemoryMetric "Dirty"
+  QueueMemoryMetric "Shmem"
+  QueueMemoryMetric "Cached"
+  QueueMemoryMetric "Active"
+  QueueMemoryMetric "Inactive"
+  QueueMemoryMetric "SwapTotal"
+  QueueMemoryMetric "SwapFree"
+  QueueMemoryMetric "SwapCached"
 }
 
 
