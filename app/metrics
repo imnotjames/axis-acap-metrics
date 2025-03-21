@@ -94,11 +94,10 @@ FlushMetrics() {
 
 
 QueueCPUMetrics() {
-  CPU_STATS="$(cat /proc/stat | grep 'cpu[0-9]' | sed 's/^cpu\([0-9]\+\)\s*/\1 /')"
-
   USER_HZ=100
 
-  echo "$CPU_STATS" | while read -r CPU_LINE; do
+  cat /proc/stat | grep 'cpu[0-9]' | sed 's/^cpu\([0-9]\+\)\s*/\1 /' | \
+  while read -r CPU_LINE; do
     CPU_ID=$(echo "$CPU_LINE" | cut -d' ' -f 1)
     CPU_USER=$(( $(echo "$CPU_LINE" | cut -d' ' -f 2) / $USER_HZ ))
     CPU_NICE=$(( $(echo "$CPU_LINE" | cut -d' ' -f 3) / $USER_HZ ))
