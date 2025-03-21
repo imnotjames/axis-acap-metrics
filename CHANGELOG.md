@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/imnotjames/axis-acap-metrics/compare/v0.2.1...v0.2.2) (2025-03-21)
+
+
+### Bug Fixes
+
+* add separator to metrics ([d49d754](https://github.com/imnotjames/axis-acap-metrics/commit/d49d7544673f45efbe49bd379ce4c8b2d77cffa9))
+
 ## [0.2.1](https://github.com/imnotjames/axis-acap-metrics/compare/v0.2.0...v0.2.1) (2025-03-21)
 
 
