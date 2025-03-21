@@ -3,6 +3,7 @@
 APP_NAME=$(basename $0)
 BUFFER_FILE=$(mktemp /tmp/${APP_NAME}.XXXXXX)
 
+
 GetParameters() {
   cat $1 | grep '=' | \
   while read -r PARAM_LINE; do
@@ -12,6 +13,7 @@ GetParameters() {
     echo "export $KEY=$VALUE"
   done
 }
+
 
 QueueMetric() {
   METRIC_HOST=$(hostname)
@@ -32,6 +34,7 @@ QueueMetric() {
 
   echo "${METRIC_NAME}{${METRIC_META}} ${METRIC_DATA}" >> "$BUFFER_FILE"
 }
+
 
 FlushMetrics() {
   if [ ! -s "$BUFFER_FILE" ]; then
@@ -97,59 +100,63 @@ FlushMetrics() {
 
 
 QueueCPUMetrics() {
-  CPU_STATS=$(cat /proc/stat | grep 'cpu  ' | sed 's/^cpu  //')
+  CPU_STATS="$(cat /proc/stat | grep 'cpu[0-9]' | sed 's/^cpu\([0-9]\+\)\s*/\1 /')"
 
-  CPU_USER=$(echo "$CPU_STATS" | cut -d' ' -f 1)
-  QueueMetric "cpu_user" "gauge" "${CPU_USER}"
+  USER_HZ=100
 
-  CPU_SYSTEM=$(echo "$CPU_STATS" | cut -d' ' -f 3)
-  QueueMetric "cpu_system" "gauge" "${CPU_SYSTEM}"
+  echo "$CPU_STATS" | while read -r CPU_LINE; do
+    CPU_ID=$(echo "$CPU_LINE" | cut -d' ' -f 1)
+    CPU_USER=$(( $(echo "$CPU_LINE" | cut -d' ' -f 2) / $USER_HZ ))
+    CPU_NICE=$(( $(echo "$CPU_LINE" | cut -d' ' -f 3) / $USER_HZ ))
+    CPU_SYSTEM=$(( $(echo "$CPU_LINE" | cut -d' ' -f 4) / $USER_HZ ))
+    CPU_IDLE=$(( $(echo "$CPU_LINE" | cut -d' ' -f 5) / $USER_HZ ))
+    CPU_IOWAIT=$(( $(echo "$CPU_LINE" | cut -d' ' -f 6) / $USER_HZ ))
+    CPU_IRQ=$(( $(echo "$CPU_LINE" | cut -d' ' -f 7) / $USER_HZ ))
+    CPU_SOFTIRQ=$(( $(echo "$CPU_LINE" | cut -d' ' -f 8) / $USER_HZ ))
+    CPU_STEAL=$(( $(echo "$CPU_LINE" | cut -d' ' -f 9) / $USER_HZ ))
 
-  CPU_IDLE=$(echo "$CPU_STATS" | cut -d' ' -f 4)
-  QueueMetric "cpu_idle" "gauge" "${CPU_IDLE}"
-
-  CPU_IOWAIT=$(echo "$CPU_STATS" | cut -d' ' -f 5)
-  QueueMetric "cpu_iowait" "gauge" "${CPU_IOWAIT}"
-
-  CPU_IRQ=$(echo "$CPU_STATS" | cut -d' ' -f 6)
-  QueueMetric "cpu_interrupt" "gauge" "${CPU_IRQ}"
-
-  CPU_STEAL=$(echo "$CPU_STATS" | cut -d' ' -f 8)
-  QueueMetric "cpu_stolen" "gauge" "${CPU_STEAL}"
-
-  CPU_GUEST=$(echo "$CPU_STATS" | cut -d' ' -f 9)
-  QueueMetric "cpu_guest" "gauge" "${CPU_GUEST}"
+    QueueMetric "node_cpu_seconds_total" "counter" "${CPU_USER}" "cpu=\"${CPU_ID}\",mode=\"user\""
+    QueueMetric "node_cpu_seconds_total" "counter" "${CPU_NICE}" "cpu=\"${CPU_ID}\",mode=\"nice\""
+    QueueMetric "node_cpu_seconds_total" "counter" "${CPU_SYSTEM}" "cpu=\"${CPU_ID}\",mode=\"system\""
+    QueueMetric "node_cpu_seconds_total" "counter" "${CPU_IDLE}" "cpu=\"${CPU_ID}\",mode=\"idle\""
+    QueueMetric "node_cpu_seconds_total" "counter" "${CPU_IOWAIT}" "cpu=\"${CPU_ID}\",mode=\"iowait\""
+    QueueMetric "node_cpu_seconds_total" "counter" "${CPU_IRQ}" "cpu=\"${CPU_ID}\",mode=\"irq\""
+    QueueMetric "node_cpu_seconds_total" "counter" "${CPU_SOFTIRQ}" "cpu=\"${CPU_ID}\",mode=\"softirq\""
+    QueueMetric "node_cpu_seconds_total" "counter" "${CPU_STEAL}" "cpu=\"${CPU_ID}\",mode=\"steal\""
+  done
 }
 
 
 QueueDiskMetrics() {
   TARGET_DISK=$1
-  DISK_META="device=\"${TARGET_DISK}\""
-  
-  DISK_STATS=$(df | grep "^${TARGET_DISK}" | head -n1)
 
-  DISK_TOTAL_KB=$(echo $DISK_STATS | cut -d' ' -f 2)
-  DISK_TOTAL=$(( $DISK_TOTAL_KB * 1024 ))
-  DISK_USED_KB=$(echo $DISK_STATS | cut -d' ' -f 3)
+  DISK_STATS=$(
+    df -T -P \
+      | grep "^${TARGET_DISK}" \
+      | head -n1 \
+      | sed 's/\s\+/ /g'
+  )
+
+  DISK_DEVICE=$(echo $DISK_STATS | cut -d' ' -f 1)
+  DISK_TYPE=$(echo $DISK_STATS | cut -d' ' -f 2)
+  DISK_MOUNTPOINT=$(echo $DISK_STATS | cut -d' ' -f 7)
+
+  DISK_TOTAL_KB=$(echo $DISK_STATS | cut -d' ' -f 3)
+  DISK_TOTAL=$(($DISK_TOTAL_KB * 1024))
+  DISK_USED_KB=$(echo $DISK_STATS | cut -d' ' -f 4)
   DISK_USED=$(($DISK_USED_KB * 1024))
-  DISK_FREE_KB=$(echo $DISK_STATS | cut -d' ' -f 4)
-  DISK_FREE=$(($DISK_FREE_KB * 1024))
+  DISK_AVAIL_KB=$(echo $DISK_STATS | cut -d' ' -f 5)
+  DISK_AVAIL=$(($DISK_AVAIL_KB * 1024))
 
-  DISK_UTILIZED=$(( 100 * $DISK_USED / $DISK_TOTAL ))
+  DISK_FREE=$(( $DISK_TOTAL - $DISK_USED ))
 
-  if [ $DISK_UTILIZED -lt 10 ]; then
-    DISK_IN_USE="0.0${DISK_UTILIZED}"
-  elif [ $DISK_UTILIZED -lt 100 ]; then
-    DISK_IN_USE="0.${DISK_UTILIZED}"
-  else
-    DISK_IN_USE="1.00"
-  fi
+  DISK_META="device=\"${DISK_DEVICE}\""
+  DISK_META="${DISK_META},fstype=\"${DISK_TYPE}\""
+  DISK_META="${DISK_META},mountpoint=\"${DISK_MOUNTPOINT}\""
 
-  QueueMetric "disk_free" "gauge" "$DISK_FREE" "$DISK_META"
-  QueueMetric "disk_in_use" "gauge" "$DISK_IN_USE" "$DISK_META"
-  QueueMetric "disk_total" "gauge" "$DISK_TOTAL" "$DISK_META"
-  QueueMetric "disk_used" "gauge" "$DISK_USED" "$DISK_META"
-  QueueMetric "disk_utilized" "gauge" "$DISK_UTILIZED" "$DISK_META"
+  QueueMetric "node_filesystem_size_bytes" "gauge" "$DISK_TOTAL" "$DISK_META"
+  QueueMetric "node_filesystem_avail_bytes" "gauge" "$DISK_AVAIL" "$DISK_META"
+  QueueMetric "node_filesystem_free_bytes" "gauge" "$DISK_FREE" "$DISK_META"
 }
 
 
@@ -163,12 +170,10 @@ QueueMemoryMetrics() {
   MEMORY_CACHED=$(echo $MEMORY_STATS | cut -d' ' -f 6)
   MEMORY_AVAILABLE=$(echo $MEMORY_STATS | cut -d' ' -f 7)
 
-  QueueMetric "mem_total" "gauge" "$MEMORY_TOTAL"
-  QueueMetric "mem_used" "gauge" "$MEMORY_USED"
-  QueueMetric "mem_free" "gauge" "$MEMORY_FREE"
-  QueueMetric "mem_shared" "gauge" "$MEMORY_SHARED"
-  QueueMetric "mem_cached" "gauge" "$MEMORY_CACHED"
-  QueueMetric "mem_usable" "gauge" "$MEMORY_AVAILABLE"
+  QueueMetric "node_memory_MemTotal_bytes" "gauge" "$MEMORY_TOTAL"
+  QueueMetric "node_memory_MemFree_bytes" "gauge" "$MEMORY_FREE"
+  QueueMetric "node_memory_Shmem_bytes" "gauge" "$MEMORY_SHARED"
+  QueueMetric "node_memory_Cached_bytes" "gauge" "$MEMORY_CACHED"
 
   SWAP_STATS=$(free | grep '^Swap:' | sed 's/\s\+/ /g')
   SWAP_STATS=${SWAP_STATS:-swap 0 0 0}
@@ -177,9 +182,9 @@ QueueMemoryMetrics() {
   SWAP_USED=$(echo $SWAP_STATS | cut -d' ' -f 3)
   SWAP_FREE=$(echo $SWAP_STATS | cut -d' ' -f 4)
 
-  QueueMetric "swap_total" "gauge" "$SWAP_TOTAL"
-  QueueMetric "swap_used" "gauge" "$SWAP_USED"
-  QueueMetric "swap_free" "gauge" "$SWAP_FREE"
+  QueueMetric "node_memory_SwapTotal_bytes" "gauge" "$SWAP_TOTAL"
+  QueueMetric "node_memory_SwapCached_bytes" "gauge" "$SWAP_USED"
+  QueueMetric "node_memory_SwapFree_bytes" "gauge" "$SWAP_FREE"
 }
 
 
@@ -192,8 +197,11 @@ QueueDiagnosticMetrics() {
     QueueDiskMetrics "$TARGET_DISK"
   done
 
-  UPTIME_SECONDS=$(cat /proc/uptime | cut -d' ' -f 1)
-  QueueMetric "uptime" "gauge" "${UPTIME_SECONDS}"
+  CURRENT_TIME=$(date '+%s')
+  QueueMetric "node_time_seconds" "gauge" "$CURRENT_TIME"
+
+  BOOT_TIME=$(cat /proc/stat | grep '^btime' | cut -d' ' -f 2)
+  QueueMetric "node_boot_time_seconds" "gauge" "$BOOT_TIME"
 }
 
 # Do an initial flush of any old metrics in case of some kind of a failure
