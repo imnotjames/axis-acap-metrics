@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/imnotjames/axis-acap-metrics/compare/v0.2.2...v0.2.3) (2025-03-21)
+
+
+### Bug Fixes
+
+* handle previous approach failing with ash ([6dc1067](https://github.com/imnotjames/axis-acap-metrics/commit/6dc1067f31337f12b4c60705c8b5252ca3a7fc0a))
+
 ## [0.2.2](https://github.com/imnotjames/axis-acap-metrics/compare/v0.2.1...v0.2.2) (2025-03-21)
 
 
