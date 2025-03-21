@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/imnotjames/axis-acap-metrics/compare/v0.2.3...v0.3.0) (2025-03-21)
+
+
+### Features
+
+* match closely with node_exporter ([4b5097a](https://github.com/imnotjames/axis-acap-metrics/commit/4b5097a8759b47315b062125336b5d27bb4abca0))
+
 ## [0.2.3](https://github.com/imnotjames/axis-acap-metrics/compare/v0.2.2...v0.2.3) (2025-03-21)
 
 
