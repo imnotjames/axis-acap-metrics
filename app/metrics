@@ -120,14 +120,15 @@ QueueCPUMetrics() {
 }
 
 
-QueueDiskMetrics() {
-  TARGET_DISK=$1
+QueueDiskMountpointMetrics() {
+  TARGET_MOUNTPOINT=$1
 
   DISK_STATS=$(
     df -T -P \
-      | grep "^${TARGET_DISK}" \
-      | head -n1 \
-      | sed 's/\s\+/ /g'
+      | tail -n +2 \
+      | sed 's/\s\+/ /g' \
+      | grep " ${TARGET_MOUNTPOINT}\$" \
+      | head -n1
   )
 
   DISK_DEVICE=$(echo $DISK_STATS | cut -d' ' -f 1)
@@ -150,6 +151,21 @@ QueueDiskMetrics() {
   QueueMetric "node_filesystem_size_bytes" "gauge" "$DISK_TOTAL" "$DISK_META"
   QueueMetric "node_filesystem_avail_bytes" "gauge" "$DISK_AVAIL" "$DISK_META"
   QueueMetric "node_filesystem_free_bytes" "gauge" "$DISK_FREE" "$DISK_META"
+}
+
+
+QueueDiskMetrics() {
+  DISKS=$(
+    df -T -P \
+      | tail -n +2 \
+      | sed 's/\s\+/ /g' \
+      | cut -d' ' -f7 \
+      | sort \
+      | uniq
+  )
+  for TARGET_MOUNTPOINT in $DISKS; do
+    QueueDiskMountpointMetrics "$TARGET_MOUNTPOINT"
+  done
 }
 
 
@@ -200,11 +216,7 @@ QueueMemoryMetrics() {
 QueueDiagnosticMetrics() {
   QueueCPUMetrics
   QueueMemoryMetrics
-
-  DISKS=$(df | grep '\(^/dev/\|^vcrfs\)' | cut -d' ' -f1 | sort | uniq)
-  for TARGET_DISK in $DISKS; do
-    QueueDiskMetrics "$TARGET_DISK"
-  done
+  QueueDiskMetrics
 
   CURRENT_TIME=$(date '+%s')
   QueueMetric "node_time_seconds" "gauge" "$CURRENT_TIME"
