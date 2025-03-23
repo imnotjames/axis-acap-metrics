@@ -213,10 +213,82 @@ QueueMemoryMetrics() {
 }
 
 
+QueueNetworkInterfaceMetrics() {
+  NETWORK_INTERFACE=$1
+
+  NETWORK_META="device=\"${NETWORK_INTERFACE}\""
+
+  NETWORK_SPEED_MB=$(cat /sys/class/net/${NETWORK_INTERFACE}/speed 2>/dev/null)
+  NETWORK_MTU=$(cat /sys/class/net/${NETWORK_INTERFACE}/mtu)
+  NETWORK_CARRIER=$(cat /sys/class/net/${NETWORK_INTERFACE}/carrier)
+
+  if [ -z "$NETWORK_SPEED_MB" ] || [ "$NETWORK_SPEED_MB" == "-1" ]; then
+    NETWORK_SPEED=0
+  else
+    NETWORK_SPEED=$(($NETWORK_SPEED_MB * 1000 * 1000 / 8))
+  fi
+
+  QueueMetric "node_network_speed_bytes" "gauge" "${NETWORK_SPEED}" "$NETWORK_META"
+  QueueMetric "node_network_mtu_bytes" "gauge" "${NETWORK_MTU}" "$NETWORK_META"
+  QueueMetric "node_network_up" "gauge" "${NETWORK_CARRIER}" "$NETWORK_META"
+
+  TRANSMIT_STATS=$(
+    cat /proc/net/dev \
+      | sed 's/\s\+/ /g' \
+      | sed 's/^\s\+//' \
+      | grep "^${NETWORK_INTERFACE}:"
+  )
+
+  RX_BYTE=$(echo $TRANSMIT_STATS | cut -d' ' -f 2)
+  RX_PACK=$(echo $TRANSMIT_STATS | cut -d' ' -f 3)
+  RX_ERRS=$(echo $TRANSMIT_STATS | cut -d' ' -f 4)
+  RX_DROP=$(echo $TRANSMIT_STATS | cut -d' ' -f 5)
+  RX_FIFO=$(echo $TRANSMIT_STATS | cut -d' ' -f 6)
+  RX_FRAM=$(echo $TRANSMIT_STATS | cut -d' ' -f 7)
+  RX_COMP=$(echo $TRANSMIT_STATS | cut -d' ' -f 8)
+  RX_MULT=$(echo $TRANSMIT_STATS | cut -d' ' -f 9)
+
+  TX_BYTE=$(echo $TRANSMIT_STATS | cut -d' ' -f 10)
+  TX_PACK=$(echo $TRANSMIT_STATS | cut -d' ' -f 11)
+  TX_ERRS=$(echo $TRANSMIT_STATS | cut -d' ' -f 12)
+  TX_DROP=$(echo $TRANSMIT_STATS | cut -d' ' -f 13)
+  TX_FIFO=$(echo $TRANSMIT_STATS | cut -d' ' -f 14)
+  TX_COLL=$(echo $TRANSMIT_STATS | cut -d' ' -f 15)
+  TX_CARR=$(echo $TRANSMIT_STATS | cut -d' ' -f 16)
+  TX_COMP=$(echo $TRANSMIT_STATS | cut -d' ' -f 17)
+
+  QueueMetric "node_network_receive_bytes_total" "counter" "$RX_BYTE" "$NETWORK_META"
+  QueueMetric "node_network_receive_packets_total" "counter" "$RX_PACK" "$NETWORK_META"
+  QueueMetric "node_network_receive_errs_total" "counter" "$RX_ERRS" "$NETWORK_META"
+  QueueMetric "node_network_receive_drop_total" "counter" "$RX_DROP" "$NETWORK_META"
+  QueueMetric "node_network_receive_fifo_total" "counter" "$RX_FIFO" "$NETWORK_META"
+  QueueMetric "node_network_receive_frame_total" "counter" "$RX_FRAM" "$NETWORK_META"
+  QueueMetric "node_network_receive_compressed_total" "counter" "$RX_COMP" "$NETWORK_META"
+  QueueMetric "node_network_receive_multicast_total" "counter" "$RX_MULT" "$NETWORK_META"
+
+  QueueMetric "node_network_transmit_bytes_total" "counter" "$TX_BYTE" "$NETWORK_META"
+  QueueMetric "node_network_transmit_packets_total" "counter" "$TX_PACK" "$NETWORK_META"
+  QueueMetric "node_network_transmit_errs_total" "counter" "$TX_ERRS" "$NETWORK_META"
+  QueueMetric "node_network_transmit_drop_total" "counter" "$TX_DROP" "$NETWORK_META"
+  QueueMetric "node_network_transmit_fifo_total" "counter" "$TX_FIFO" "$NETWORK_META"
+  QueueMetric "node_network_transmit_colls_total" "counter" "$TX_COLL" "$NETWORK_META"
+  QueueMetric "node_network_transmit_carrier_total" "counter" "$TX_CARR" "$NETWORK_META"
+  QueueMetric "node_network_transmit_compressed_total" "counter" "$TX_COMP" "$NETWORK_META"
+}
+
+
+QueueNetworkMetrics() {
+  for NETWORK_INTERFACE in $(ls /sys/class/net/); do
+    QueueNetworkInterfaceMetrics "$NETWORK_INTERFACE"
+  done
+}
+
+
 QueueDiagnosticMetrics() {
   QueueCPUMetrics
   QueueMemoryMetrics
   QueueDiskMetrics
+  QueueNetworkMetrics
 
   CURRENT_TIME=$(date '+%s')
   QueueMetric "node_time_seconds" "gauge" "$CURRENT_TIME"
