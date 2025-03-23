@@ -232,7 +232,6 @@ while true; do
   QueueDiagnosticMetrics
 
   FlushMetrics
-  echo "Metrics flushed"
 
   sleep ${METRICS_INTERVAL:-60}
 done
