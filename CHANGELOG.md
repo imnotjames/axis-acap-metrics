@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/imnotjames/axis-acap-metrics/compare/v0.4.0...v0.5.0) (2025-03-23)
+
+
+### Features
+
+* add network metrics ([d4f4032](https://github.com/imnotjames/axis-acap-metrics/commit/d4f4032313c5376e8e9e95bb64af149b00dd1cda))
+* include all disks ([e93d08e](https://github.com/imnotjames/axis-acap-metrics/commit/e93d08ee3fc02e0cd37ff82c01bb846848d65b9b))
+
 ## [0.4.0](https://github.com/imnotjames/axis-acap-metrics/compare/v0.3.0...v0.4.0) (2025-03-21)
 
 
